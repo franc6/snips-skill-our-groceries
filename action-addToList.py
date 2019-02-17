@@ -24,11 +24,13 @@ def readConfigurationFile(fileName):
 def addToList(hermes, intentMessage):
     what = intentMessage.slots.what.first().rawValue
     list = intentMessage.slots.list.first().rawValue
-    quantity = intentMessage.slots.quantity.first().rawValue()
+    quantity = intentMessage.slots.quantity.first().value()
     config = readConfigurationFile(CONFIG_INI)
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultList'])
-    client.add_to_list(what, quantity, list)
+    client.add_to_list(what, int(float(quantity)), list)
+    sentence = 'Added ' + quanity + " " + what + "to " + list
+    hermes.publish_end_session(intent_message.session_id, sentence)
 
 if __name__=="__main__":
     with Hermes("localhost:1883") as h:
