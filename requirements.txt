@@ -1,0 +1,6 @@
+#hermes bindings
+hermes-python>=0.1
+future
+
+# Our groceries API
+our-groceries-client
