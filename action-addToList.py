@@ -3,7 +3,7 @@
 from hermes_python.hermes import Hermes
 from hermes_python.ontology import *
 from io import open
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import check_output, STDOUT
 import our_groceries_client
 import ConfigParser
 import json
@@ -32,32 +32,47 @@ def getListsPayload(hermes):
     for listInfo in client._lists:
         listNames.append(listInfo['name'])
 
-    operation = [ 'add', { 'our_groceries_list_name': listNames }];
+    operation = [ 'addFromVanilla', { 'our_groceries_list_name': listNames }];
     operations = [ operation ]
     payload = { 'operations': operations }
     return json.dumps(payload)
 
 def addToList(hermes, intentMessage):
-    # Dump the intent's slots for debugging purposes
+    quantity = 1
+    what = None
+    whichList = None
     for (slot_value, slot) in intentMessage.slots.items():
-        print('Slot {} -> \n\tRaw: {} \tValue: {}'.format(slot_value, slot[0].raw_value, slot[0].slot_value.value.value))
+        if (slot_value == 'what'):
+            what = slot[0].raw_value
+        elif (slot_value == 'list'):
+            whichList = slot[0].slot_value.value.value
+        elif (slot_value == 'quantity'):
+            quantity = int(float(slot[0].slot_value.value.value))
+    if (what is None):
+        print "Nothing to add!"
+        return
+    # Set whichList to defaultlist if it's None or matches 'our groceries'
+    # The API would use the same list if we passed None, but the code below
+    # would fail when giving the response.
+    if (whichList is None) or (whichList == 'our groceries'):
+        whichList = config['secret']['defaultlist']
 
-    what = intentMessage.slots.what.first().raw_value
-    list = intentMessage.slots.list.first().raw_value
-    quantity = intentMessage.slots.quantity.first().slot_value.value.value
     config = readConfigurationFile(CONFIG_INI)
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
-    client.add_to_list(what, int(float(quantity)), list)
-    sentence = 'Added ' + quanity + " " + what + "to " + list
+    client.add_to_list(what, quantity, whichList)
+
+    # Respond that we added it to the list
+    sentence = 'Added ' + str(quantity) + " " + what + "to " + whichList
     hermes.publish_end_session(intentMessage.session_id, sentence)
+
+def updateLists(hermes):
+        payload = getListsPayload(hermes)
+        result = check_output(['/usr/bin/mosquitto_pub', '-t', 'hermes/injection/perform', '-m', payload], stderr=STDOUT)
 
 if __name__=="__main__":
     with Hermes("localhost:1883") as h:
-        payload = getListsPayload(h)
-        print("Dumping payload: " + payload)
-        p = Popen(['/usr/bin/mosquitto_pub', '-t', 'hermes/injection/perform', '-m', payload], stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-        output = p.communicate()[0]
-        print(output)
+        updateLists(h)
         h.subscribe_intent("franc:addToList",addToList).start()
 
+# TODO: Need to find a way to periodically invoke updateLists
