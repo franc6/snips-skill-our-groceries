@@ -32,37 +32,24 @@ def getItemsPayload(client, listNames):
         items = client._get_list_data(listName)
         for item in items:
             itemNames.append(item['value'])
-    print "getItemsPayload1 "
-    print json.dumps(itemNames)
-    itemNames = set(itemNames)
-    print "getItemsPayload2 "
-    print json.dumps(itemNames)
+    itemNames = list(set(itemNames))
     return [ 'addFromVanilla', { 'our_groceries_item_name': itemNames }];
 
 def getListsPayload(listNames):
     return [ 'addFromVanilla', { 'our_groceries_list_name': listNames }];
 
 def getUpdatePayload(hermes):
-    print "getUpdatePayload 1"
     operations = []
-    config = readConfigurationFile(CONFIG_INI)
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
-    print "getUpdatePayload 2"
 
     listNames = []
     for listInfo in client._lists:
         listNames.append(listInfo['name'])
-    print "getUpdatePayload 3"
 
     operations.append(getListsPayload(listNames))
-    print "getUpdatePayload 4"
-    print json.dumps(operations[0])
     operations.append(getItemsPayload(client, listNames))
-    print "getUpdatePayload 5"
-    print json.dumps(operations[1])
     payload = { 'operations': operations }
-    print "getUpdatePayload 6"
     return json.dumps(payload)
 
 def addToList(hermes, intentMessage):
@@ -85,7 +72,6 @@ def addToList(hermes, intentMessage):
     if (whichList is None) or (whichList == 'our groceries'):
         whichList = config['secret']['defaultlist']
 
-    config = readConfigurationFile(CONFIG_INI)
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
     client.add_to_list(what, quantity, whichList)
@@ -113,7 +99,6 @@ def checkList(hermes, intentMessage):
     if (whichList is None) or (whichList == 'our groceries'):
         whichList = config['secret']['defaultlist']
 
-    config = readConfigurationFile(CONFIG_INI)
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
     items = client._get_list_data(whichList)
@@ -146,16 +131,9 @@ def checkList(hermes, intentMessage):
     hermes.publish_end_session(intentMessage.session_id, sentence)
 
 def updateLists(hermes):
-    print "updateLists 1"
-    payload = getUpdatePayload(hermes)
-    print "updateLists 2"
-    print payload
+    payload = getUpdatePayload(hermes) + '\n'
     p = Popen(['/usr/bin/mosquitto_pub', '-t', 'hermes/injection/perform', '-l'], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    print "updateLists 3"
-    stdout = p.communicate(input=payload)
-    print "updateLists 4"
-    print stdout.decode()
-    print "updateLists 5"
+    stdout = p.communicate(input=payload.encode('utf-8'))[0]
 
 def intentCallback(hermes, intentMessage):
     if intentMessage.intent.intent_name == 'franc:addToList':
@@ -164,6 +142,7 @@ def intentCallback(hermes, intentMessage):
         checkList(hermes, intentMessage)
 
 if __name__=="__main__":
+    config = readConfigurationFile(CONFIG_INI)
     with Hermes("localhost:1883") as h:
         updateLists(h)
         h.subscribe_intents(intentCallback).start()
