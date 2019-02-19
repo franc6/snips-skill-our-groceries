@@ -91,10 +91,18 @@ def checkList(hermes, intentMessage):
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
     items = client._get_list_data(whichList)
-    for item_data in items:
-        crossedOff = item_data.get('crossedOff', False)
-        if (re.sub(r"[0-9|\(|\)\w]", "", item_data['value'].upper()) == re.sub(r"[\w]", "", what.upper())) and not crossedOff:
-            res = re.search(what + "\(({})\)", item_data['value'])
+    for item in items:
+        crossedOff = item.get('crossedOff', False)
+        # Note our two primary regular expressions are commented out below
+        # and combined into regex.  The uncommented regex line below this
+        # is just building the expression all at once.
+        #regex1 = r"^" + re.escape(what) + r" *$"
+        #regex2 = r"^" + re.escape(what) + r"\ \(\d\)$"
+        #regex = r"(" + regex1 + r")|(" + regex2 + r")"
+        regex = r"(^" + re.escape(what) + r" *$)|(^" + re.escape(what) + r"\ \(\d\)$)"
+        res = re.search(regex, item['value'], re.IGNORECASE)
+        if res is not None and not crossedOff:
+            res = re.search(re.escape(what) + r"\(({})\)", item['value'], re.IGNORECASE)
             if res is not None:
                 quantity = res.group(1)
             else:
