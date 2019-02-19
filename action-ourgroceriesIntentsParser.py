@@ -97,17 +97,17 @@ def checkList(hermes, intentMessage):
         # and combined into regex.  The uncommented regex line below this
         # is just building the expression all at once.
         #regex1 = r"^" + re.escape(what) + r" *$"
-        #regex2 = r"^" + re.escape(what) + r"\ \(\d\)$"
+        #regex2 = r"^" + re.escape(what) + r"\ \((\d+)\)$"
         #regex = r"(" + regex1 + r")|(" + regex2 + r")"
-        regex = r"(^" + re.escape(what) + r" *$)|(^" + re.escape(what) + r"\ \(\d\)$)"
+        regex = r"(^" + re.escape(what) + r" *$)|(^" + re.escape(what) + r"\ \((\d+)\)$)"
         res = re.search(regex, item['value'], re.IGNORECASE)
+        # TODO: break even if it's crossed off -- there's no need to keep 
+        # checking
         if res is not None and not crossedOff:
-            res = re.search(re.escape(what) + r"\(({})\)", item['value'], re.IGNORECASE)
-            if res is not None:
-                quantity = res.group(1)
-            else:
+            quantity = res.group(3)
+            if quantity is None:
                 quantity = "1"
-                sentence = "There {v} {q} {w} on the {l} list".format(v="are" if int(quantity) > 1 else "is", q=quantity, w=what, l=whichList)
+            sentence = "There {v} {q} {w} on the {l} list".format(v="are" if int(quantity) > 1 else "is", q=quantity, w=what, l=whichList)
             break
     if sentence is None:
         sentence = "{w} is not on the {l} list.".format(w=what, l=whichList)
