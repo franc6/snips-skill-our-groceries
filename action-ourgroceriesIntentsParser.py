@@ -17,6 +17,15 @@ class SnipsConfigParser(ConfigParser.SafeConfigParser):
     def to_dict(self):
         return {section: {option_name : option for option_name, option in self.items(section)} for section in self.sections()}
 
+class HiddenPrints:
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
+
 def readConfigurationFile(fileName):
     try:
         with open(fileName, encoding=CONFIG_ENCODING) as f:
@@ -64,7 +73,6 @@ def addToList(hermes, intentMessage):
         elif (slot_value == 'quantity'):
             quantity = int(float(slot[0].slot_value.value.value))
     if (what is None):
-        print "Nothing to add!"
         return
     # Set whichList to defaultlist if it's None or matches 'our groceries'
     # The API would use the same list if we passed None, but the code below
@@ -91,7 +99,6 @@ def checkList(hermes, intentMessage):
         elif (slot_value == 'list'):
             whichList = slot[0].slot_value.value.value
     if (what is None):
-        print "Nothing to check for!"
         return
     # Set whichList to defaultlist if it's None or matches 'our groceries'
     # The API would use the same list if we passed None, but the code below
@@ -136,10 +143,11 @@ def updateLists(hermes):
     stdout = p.communicate(input=payload.encode('utf-8'))[0]
 
 def intentCallback(hermes, intentMessage):
-    if intentMessage.intent.intent_name == 'franc:addToList':
-        addToList(hermes, intentMessage)
-    elif intentMessage.intent.intent_name == 'franc:checkList':
-        checkList(hermes, intentMessage)
+    with HiddenPrints():
+        if intentMessage.intent.intent_name == 'franc:addToList':
+            addToList(hermes, intentMessage)
+        elif intentMessage.intent.intent_name == 'franc:checkList':
+            checkList(hermes, intentMessage)
 
 if __name__=="__main__":
     config = readConfigurationFile(CONFIG_INI)
