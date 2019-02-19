@@ -9,7 +9,7 @@ import ConfigParser
 import json
 import re
 
-CONFIG_INI = "config.ini"
+CONFIG_INI = "/usr/share/snips/assistant/snippets/franc.Our_Groceries/config.ini"
 CONFIG_ENCODING = "utf-8"
 config = None
 
@@ -27,6 +27,7 @@ def readConfigurationFile(fileName):
         return dict()
 
 def getListsPayload(hermes):
+    config = readConfigurationFile(CONFIG_INI)
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
     listNames = []
@@ -58,6 +59,7 @@ def addToList(hermes, intentMessage):
     if (whichList is None) or (whichList == 'our groceries'):
         whichList = config['secret']['defaultlist']
 
+    config = readConfigurationFile(CONFIG_INI)
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
     client.add_to_list(what, quantity, whichList)
@@ -85,19 +87,20 @@ def checkList(hermes, intentMessage):
     if (whichList is None) or (whichList == 'our groceries'):
         whichList = config['secret']['defaultlist']
 
+    config = readConfigurationFile(CONFIG_INI)
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
     items = client._get_list_data(whichList)
     for item_data in items:
         crossedOff = item_data.get('crossedOff', False)
-        if (re.sub(r"[0-9|\(|\)\w]", "", item_data['value'].upper()) == re.sub(r"[\w]", "", item.upper())) and not crossedOff:
-                res = re.search(what + "\(({})\)", item_data['value'])
-                if res is not None:
-                    quantity = res.group(1)
-                else:
-                    quantity = "1"
+        if (re.sub(r"[0-9|\(|\)\w]", "", item_data['value'].upper()) == re.sub(r"[\w]", "", what.upper())) and not crossedOff:
+            res = re.search(what + "\(({})\)", item_data['value'])
+            if res is not None:
+                quantity = res.group(1)
+            else:
+                quantity = "1"
                 sentence = "There are " + quantity + " " + what + " on the " + whichList + " list."
-                break
+            break
     if sentence is None:
         sentence = what + " is not on the " + whichList + " list."
 
@@ -106,22 +109,18 @@ def checkList(hermes, intentMessage):
     hermes.publish_end_session(intentMessage.session_id, sentence)
 
 def updateLists(hermes):
-        payload = getListsPayload(hermes)
-        result = check_output(['/usr/bin/mosquitto_pub', '-t', 'hermes/injection/perform', '-m', payload], stderr=STDOUT)
+    payload = getListsPayload(hermes)
+    result = check_output(['/usr/bin/mosquitto_pub', '-t', 'hermes/injection/perform', '-m', payload], stderr=STDOUT)
 
 def intentCallback(hermes, intentMessage):
     if intentMessage.intent.intent_name == 'franc:addToList':
         addToList(hermes, intentMessage)
     elif intentMessage.intent.intent_name == 'franc:checkList':
         checkList(hermes, intentMessage)
-    else:
-        return
 
 if __name__=="__main__":
-    config = readConfigurationFile(CONFIG_INI)
     with Hermes("localhost:1883") as h:
         updateLists(h)
         h.subscribe_intents(intentCallback).start()
 
 # TODO: Need to find a way to periodically invoke updateLists
-
