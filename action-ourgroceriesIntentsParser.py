@@ -105,7 +105,6 @@ def checkList(hermes, intentMessage):
         sentence = what + " is not on the " + whichList + " list."
 
     # Respond that we added it to the list
-    sentence = 'Added ' + str(quantity) + " " + what + "to " + whichList
     hermes.publish_end_session(intentMessage.session_id, sentence)
 
 def updateLists(hermes):
