@@ -65,7 +65,7 @@ def addToList(hermes, intentMessage):
     client.add_to_list(what, quantity, whichList)
 
     # Respond that we added it to the list
-    sentence = 'Added ' + str(quantity) + " " + what + "to " + whichList
+    sentence = "Added {q} {w} to the {l} list.".format(q=quantity, w=what, l=whichList)
     hermes.publish_end_session(intentMessage.session_id, sentence)
 
 def checkList(hermes, intentMessage):
@@ -107,10 +107,10 @@ def checkList(hermes, intentMessage):
                 quantity = res.group(1)
             else:
                 quantity = "1"
-                sentence = "There are " + quantity + " " + what + " on the " + whichList + " list."
+                sentence = "There {v} {q} {w} on the {l} list".format(v="are" if int(quantity) > 1 else "is", q=quantity, w=what, l=whichList)
             break
     if sentence is None:
-        sentence = what + " is not on the " + whichList + " list."
+        sentence = "{w} is not on the {l} list.".format(w=what, l=whichList)
 
     # Respond that we added it to the list
     hermes.publish_end_session(intentMessage.session_id, sentence)
