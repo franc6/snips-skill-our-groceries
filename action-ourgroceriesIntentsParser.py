@@ -3,7 +3,7 @@
 from hermes_python.hermes import Hermes
 from hermes_python.ontology import *
 from io import open
-from subprocess import check_output, STDOUT
+from subprocess import Popen, PIPE, STDOUT
 import our_groceries_client
 import ConfigParser
 import json
@@ -26,17 +26,43 @@ def readConfigurationFile(fileName):
     except (IOError, ConfigParser.Error) as e:
         return dict()
 
-def getListsPayload(hermes):
+def getItemsPayload(client, listNames):
+    itemNames = []
+    for listName in listNames:
+        items = client._get_list_data(listName)
+        for item in items:
+            itemNames.append(item['value'])
+    print "getItemsPayload1 "
+    print json.dumps(itemNames)
+    itemNames = set(itemNames)
+    print "getItemsPayload2 "
+    print json.dumps(itemNames)
+    return [ 'addFromVanilla', { 'our_groceries_item_name': itemNames }];
+
+def getListsPayload(listNames):
+    return [ 'addFromVanilla', { 'our_groceries_list_name': listNames }];
+
+def getUpdatePayload(hermes):
+    print "getUpdatePayload 1"
+    operations = []
     config = readConfigurationFile(CONFIG_INI)
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
+    print "getUpdatePayload 2"
+
     listNames = []
     for listInfo in client._lists:
         listNames.append(listInfo['name'])
+    print "getUpdatePayload 3"
 
-    operation = [ 'addFromVanilla', { 'our_groceries_list_name': listNames }];
-    operations = [ operation ]
+    operations.append(getListsPayload(listNames))
+    print "getUpdatePayload 4"
+    print json.dumps(operations[0])
+    operations.append(getItemsPayload(client, listNames))
+    print "getUpdatePayload 5"
+    print json.dumps(operations[1])
     payload = { 'operations': operations }
+    print "getUpdatePayload 6"
     return json.dumps(payload)
 
 def addToList(hermes, intentMessage):
@@ -120,8 +146,16 @@ def checkList(hermes, intentMessage):
     hermes.publish_end_session(intentMessage.session_id, sentence)
 
 def updateLists(hermes):
-    payload = getListsPayload(hermes)
-    result = check_output(['/usr/bin/mosquitto_pub', '-t', 'hermes/injection/perform', '-m', payload], stderr=STDOUT)
+    print "updateLists 1"
+    payload = getUpdatePayload(hermes)
+    print "updateLists 2"
+    print payload
+    p = Popen(['/usr/bin/mosquitto_pub', '-t', 'hermes/injection/perform', '-l'], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+    print "updateLists 3"
+    stdout = p.communicate(input=payload)
+    print "updateLists 4"
+    print stdout.decode()
+    print "updateLists 5"
 
 def intentCallback(hermes, intentMessage):
     if intentMessage.intent.intent_name == 'franc:addToList':
