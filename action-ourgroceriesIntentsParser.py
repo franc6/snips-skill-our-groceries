@@ -101,13 +101,17 @@ def checkList(hermes, intentMessage):
         #regex = r"(" + regex1 + r")|(" + regex2 + r")"
         regex = r"(^" + re.escape(what) + r" *$)|(^" + re.escape(what) + r"\ \((\d+)\)$)"
         res = re.search(regex, item['value'], re.IGNORECASE)
-        # TODO: break even if it's crossed off -- there's no need to keep 
-        # checking
-        if res is not None and not crossedOff:
-            quantity = res.group(3)
-            if quantity is None:
-                quantity = "1"
-            sentence = "There {v} {q} {w} on the {l} list".format(v="are" if int(quantity) > 1 else "is", q=quantity, w=what, l=whichList)
+        # Note the following two conditions are not combined because we want to
+        # break the loop even if the item is crossed off.  If it's crossed off,
+        # we don't need to keep looking for a match -- you can't have the same
+        # item on the list with different case.  Perhaps with different
+        # spelling, but we're not doing sounds like checking here. :(
+        if res is not None:
+            if not crossedOff:
+                quantity = res.group(3)
+                if quantity is None:
+                    quantity = "1"
+                sentence = "There {v} {q} {w} on the {l} list".format(v="are" if int(quantity) > 1 else "is", q=quantity, w=what, l=whichList)
             break
     if sentence is None:
         sentence = "{w} is not on the {l} list.".format(w=what, l=whichList)
