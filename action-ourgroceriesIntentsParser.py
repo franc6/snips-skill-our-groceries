@@ -3,6 +3,7 @@
 from hermes_python.hermes import Hermes
 from hermes_python.ontology import *
 import sys
+import os
 from io import open
 from subprocess import Popen, PIPE, STDOUT
 import our_groceries_client
