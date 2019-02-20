@@ -9,7 +9,7 @@ import ConfigParser
 import json
 import re
 
-CONFIG_INI = "/usr/share/snips/assistant/snippets/franc.Our_Groceries/config.ini"
+CONFIG_INI = "config.ini"
 CONFIG_ENCODING = "utf-8"
 config = None
 
