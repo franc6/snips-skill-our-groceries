@@ -6,7 +6,7 @@ if [ ! -d "${VENV}" ]
 then
     PYTHON=`which python2`
 
-    if [ ! -f ${PYTHON} ]
+    if [ -z ${PYTHON} ]
     then
 	echo "Could not find python!"
     fi
@@ -17,7 +17,7 @@ fi
 
 pip install -r requirements.txt
 
-if [ ! -f config.ini ]
+if [ ! -e config.ini ]
 then
     cp config.ini.default config.ini
 fi
