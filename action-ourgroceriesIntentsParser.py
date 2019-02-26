@@ -219,3 +219,4 @@ def main(hermes):
 
 if __name__ == "__main__":
     with Hermes("localhost:1883") as h:
+        main(h)
