@@ -1,107 +1,126 @@
 #!/usr/bin/env python2
+"""Snips skill action.
 
-from hermes_python.hermes import Hermes
-from hermes_python.ontology import *
-from io import open
-from subprocess import Popen, PIPE, STDOUT
-import our_groceries_client
+Subscribes to franc:addToList and franc:checkList intents and processes them.
+"""
 import ConfigParser
+from io import open
 import json
 import re
+from subprocess import Popen, PIPE, STDOUT
+from hermes_python.hermes import Hermes
+from hermes_python.ontology import *
+import our_groceries_client
 
 CONFIG_INI = "config.ini"
 CONFIG_ENCODING = "utf-8"
-config = None
+__all__ = []
 
 class SnipsConfigParser(ConfigParser.SafeConfigParser):
+    """Subclass ConfigParser.SafeConfigParser to add to_dict method."""
     def to_dict(self):
-        return {section: {option_name : option for option_name, option in self.items(section)} for section in self.sections()}
+        """Returns a dictionary of sections and options from the config file"""
+        return {section: {option_name : option for option_name,
+                          option in self.items(section)} for section in self.sections()}
 
-def readConfigurationFile(fileName):
+
+def read_configuration_file(file_name):
+    """Reads and parses CONFIG_INI.  Returns a dictionary based on its contents"""
     try:
-        with open(fileName, encoding=CONFIG_ENCODING) as f:
-            confParser = SnipsConfigParser()
-            confParser.readfp(f)
-            return confParser.to_dict()
-    except (IOError, ConfigParser.Error) as e:
+        with open(file_name, encoding=CONFIG_ENCODING) as file:
+            config_parser = SnipsConfigParser()
+            config_parser.readfp(file)
+            return config_parser.to_dict()
+    except (IOError, ConfigParser.Error):
         return dict()
 
-def getItemsPayload(client, listNames):
-    itemNames = []
-    for listName in listNames:
-        items = client._get_list_data(listName)
+def get_items_payload(client, list_names):
+    """Gets all items from the given lists, and formats them for injection"""
+    item_names = []
+    for list_name in list_names:
+        items = client._get_list_data(list_name)
         for item in items:
-            itemNames.append(item['value'])
-    itemNames = list(set(itemNames))
-    return [ 'addFromVanilla', { 'our_groceries_item_name': itemNames }];
+            item_names.append(item['value'])
+    item_names = list(set(item_names))
+    return ['addFromVanilla', {'our_groceries_item_name': item_names}]
 
-def getListsPayload(listNames):
-    return [ 'addFromVanilla', { 'our_groceries_list_name': listNames }];
+def get_lists_payload(list_names):
+    """Formats the given list names as needed for injection"""
+    return ['addFromVanilla', {'our_groceries_list_name': list_names}]
 
-def getUpdatePayload(hermes):
+def get_update_payload(hermes):
+    """Retrives list names and items names, formatting them for injection"""
     operations = []
     client = our_groceries_client.OurGroceriesClient()
-    client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
+    client.authenticate(hermes.skill_config['secret']['username'],
+                        hermes.skill_config['secret']['password'],
+                        hermes.skill_config['secret']['defaultlist'])
 
-    listNames = []
-    for listInfo in client._lists:
-        listNames.append(listInfo['name'])
+    list_names = []
+    for list_info in client._lists:
+        list_names.append(list_info['name'])
 
-    operations.append(getListsPayload(listNames))
-    operations.append(getItemsPayload(client, listNames))
-    payload = { 'operations': operations }
+    operations.append(get_lists_payload(list_names))
+    operations.append(get_items_payload(client, list_names))
+    payload = {'operations': operations}
     return json.dumps(payload)
 
-def addToList(hermes, intentMessage):
+def add_to_list(hermes, intent_message):
+    """Adds the given item and quantity to the given list"""
     quantity = 1
     what = None
-    whichList = None
-    for (slot_value, slot) in intentMessage.slots.items():
-        if (slot_value == 'what'):
+    which_list = None
+    for (slot_value, slot) in intent_message.slots.items():
+        if slot_value == 'what':
             what = slot[0].raw_value
-        elif (slot_value == 'list'):
-            whichList = slot[0].slot_value.value.value
-        elif (slot_value == 'quantity'):
+        elif slot_value == 'list':
+            which_list = slot[0].slot_value.value.value
+        elif slot_value == 'quantity':
             quantity = int(float(slot[0].slot_value.value.value))
-    if (what is None):
+    if what is None:
         return
     # Set whichList to defaultlist if it's None or matches 'our groceries'
     # The API would use the same list if we passed None, but the code below
     # would fail when giving the response.
-    if (whichList is None) or (whichList == 'our groceries'):
-        whichList = config['secret']['defaultlist']
+    if (which_list is None) or (which_list == 'our groceries'):
+        which_list = hermes.skill_config['secret']['defaultlist']
 
     client = our_groceries_client.OurGroceriesClient()
-    client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
-    client.add_to_list(what, quantity, whichList)
+    client.authenticate(hermes.skill_config['secret']['username'],
+                        hermes.skill_config['secret']['password'],
+                        hermes.skill_config['secret']['defaultlist'])
+    client.add_to_list(what, quantity, which_list)
 
     # Respond that we added it to the list
-    sentence = "Added {q} {w} to the {l} list.".format(q=quantity, w=what, l=whichList)
-    hermes.publish_end_session(intentMessage.session_id, sentence)
+    sentence = "Added {q} {w} to the {l} list.".format(q=quantity, w=what, l=which_list)
+    hermes.publish_end_session(intent_message.session_id, sentence)
 
-def checkList(hermes, intentMessage):
+def check_list(hermes, intent_message):
+    """Checks the given list for an item and speaks if it's there"""
     quantity = '1'
     what = None
-    whichList = None
+    which_list = None
     sentence = None
-    for (slot_value, slot) in intentMessage.slots.items():
-        if (slot_value == 'what'):
+    for (slot_value, slot) in intent_message.slots.items():
+        if slot_value == 'what':
             what = slot[0].raw_value
-        elif (slot_value == 'list'):
-            whichList = slot[0].slot_value.value.value
-    if (what is None):
+        elif slot_value == 'list':
+            which_list = slot[0].slot_value.value.value
+    if what is None:
         return
     # Set whichList to defaultlist if it's None or matches 'our groceries'
     # The API would use the same list if we passed None, but the code below
     # would fail when giving the response.
-    if (whichList is None) or (whichList == 'our groceries'):
-        whichList = config['secret']['defaultlist']
+    if (which_list is None) or (which_list == 'our groceries'):
+        which_list = hermes.skill_config['secret']['defaultlist']
 
     client = our_groceries_client.OurGroceriesClient()
-    client.authenticate(config['secret']['username'], config['secret']['password'], config['secret']['defaultlist'])
-    items = client._get_list_data(whichList)
+    client.authenticate(hermes.skill_config['secret']['username'],
+                        hermes.skill_config['secret']['password'],
+                        hermes.skill_config['secret']['defaultlist'])
+    items = client._get_list_data(which_list)
     for item in items:
-        crossedOff = item.get('crossedOff', False)
+        crossed_off = item.get('crossedOff', False)
         # Note our two primary regular expressions are commented out below
         # and combined into regex.  The uncommented regex line below this
         # is just building the expression all at once.
@@ -116,36 +135,40 @@ def checkList(hermes, intentMessage):
         # item on the list with different case.  Perhaps with different
         # spelling, but we're not doing sounds like checking here. :(
         if res is not None:
-            if not crossedOff:
+            if not crossed_off:
                 quantity = res.group(3)
                 if quantity is None:
                     quantity = "1"
-                sentence = "There {v} {q} {w} on the {l} list".format(v="are" if int(quantity) > 1 else "is", q=quantity, w=what, l=whichList)
+                sentence = "There {v} {q} {w} on the {l} list" \
+                    .format(v="are" if int(quantity) > 1 else "is",
+                            q=quantity, w=what, l=which_list)
             break
     if sentence is None:
-        sentence = "{w} is not on the {l} list.".format(w=what, l=whichList)
+        sentence = "{w} is not on the {l} list." \
+            .format(w=what, l=which_list)
 
     # Respond that we added it to the list
-    hermes.publish_end_session(intentMessage.session_id, sentence)
+    hermes.publish_end_session(intent_message.session_id, sentence)
 
-def updateLists(hermes):
-    payload = getUpdatePayload(hermes) + '\n'
-    p = Popen(['/usr/bin/mosquitto_pub', '-t', 'hermes/injection/perform', '-l'], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    stdout = p.communicate(input=payload.encode('utf-8'))[0]
+def inject_lists_and_items(hermes):
+    """ Injects the lists and items"""
+    payload = get_update_payload(hermes) + '\n'
+    pipe = Popen(['/usr/bin/mosquitto_pub',
+                  '-t',
+                  'hermes/injection/perform',
+                  '-l'
+                  ],
+                 stdin=PIPE,
+                 stdout=PIPE,
+                 stderr=STDOUT)
+    pipe.communicate(input=payload.encode('utf-8'))
 
-#def intentCallback(hermes, intentMessage):
-#    if intentMessage.intent.intent_name == 'franc:addToList':
-#        addToList(hermes, intentMessage)
-#    elif intentMessage.intent.intent_name == 'franc:checkList':
-#        checkList(hermes, intentMessage)
-
-if __name__=="__main__":
-    config = readConfigurationFile(CONFIG_INI)
+if __name__ == "__main__":
     with Hermes("localhost:1883") as h:
-        updateLists(h)
-        h.subscribe_intent("franc:addToList", addToList) \
-         .subscribe_intent("franc:checkList", checkList) \
+        h.skill_config = read_configuration_file(CONFIG_INI)
+        inject_lists_and_items(h)
+        h.subscribe_intent("franc:addToList", add_to_list) \
+         .subscribe_intent("franc:checkList", check_list) \
          .loop_forever()
-        #h.subscribe_intents(intentCallback).start()
 
 # TODO: Need to find a way to periodically invoke updateLists
