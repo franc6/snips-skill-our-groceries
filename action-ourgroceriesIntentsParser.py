@@ -8,6 +8,7 @@ from io import open
 import json
 import re
 from subprocess import Popen, PIPE, STDOUT
+from threading import Timer
 from hermes_python.hermes import Hermes
 from hermes_python.ontology import *
 import our_groceries_client
@@ -15,6 +16,45 @@ import our_groceries_client
 CONFIG_INI = "config.ini"
 CONFIG_ENCODING = "utf-8"
 __all__ = []
+
+
+class RepeatTimer(object):
+    """Class to repeatedly run a given function via a timer"""
+    def __init__(self, interval, function, *args, **kwargs):
+        """Initialize the object
+
+        interval: Time between running, in seconds
+        function: A function to call when the timer goes off
+        args, kwargs: The arguments to pass to function
+        """
+        self._timer = None
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.is_running = False
+
+    def _run(self):
+        """_run is called when the timer goes off, and invokes self.function"""
+        self.is_running = False
+        self.start()  # Start the timer again!
+        self.function(*self.args, **self.kwargs)
+
+    def start(self):
+        """Checks that the timer isn't running, and if not, creates a timer,
+           and starts it"""
+        if not self.is_running:
+            self._timer = Timer(self.interval, self._run)
+            self._timer.start()
+            self.is_running = True
+
+    def stop(self):
+        """Kills the timer"""
+        if self.is_running:
+            if self._timer is not None:
+                self._timer.cancel()
+            self.is_running = False
+
 
 class SnipsConfigParser(ConfigParser.SafeConfigParser):
     """Subclass ConfigParser.SafeConfigParser to add to_dict method."""
@@ -163,12 +203,19 @@ def inject_lists_and_items(hermes):
                  stderr=STDOUT)
     pipe.communicate(input=payload.encode('utf-8'))
 
+def main(hermes):
+    """main function"""
+    hermes.skill_config = read_configuration_file(CONFIG_INI)
+    inject_lists_and_items(hermes)
+    injection_timer = RepeatTimer(3600, inject_lists_and_items, hermes)
+    injection_timer.start()
+    hermes.subscribe_intent("franc:addToList", add_to_list) \
+        .subscribe_intent("franc:checkList", check_list) \
+        .loop_forever()
+    # Note this isn't really necessary, but just in case loop_forever()
+    # doesn't, we should kill the timer.
+    injection_timer.stop()
+
+
 if __name__ == "__main__":
     with Hermes("localhost:1883") as h:
-        h.skill_config = read_configuration_file(CONFIG_INI)
-        inject_lists_and_items(h)
-        h.subscribe_intent("franc:addToList", add_to_list) \
-         .subscribe_intent("franc:checkList", check_list) \
-         .loop_forever()
-
-# TODO: Need to find a way to periodically invoke updateLists
