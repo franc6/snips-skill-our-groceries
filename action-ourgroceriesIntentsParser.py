@@ -133,16 +133,19 @@ def updateLists(hermes):
     p = Popen(['/usr/bin/mosquitto_pub', '-t', 'hermes/injection/perform', '-l'], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     stdout = p.communicate(input=payload.encode('utf-8'))[0]
 
-def intentCallback(hermes, intentMessage):
-    if intentMessage.intent.intent_name == 'franc:addToList':
-        addToList(hermes, intentMessage)
-    elif intentMessage.intent.intent_name == 'franc:checkList':
-        checkList(hermes, intentMessage)
+#def intentCallback(hermes, intentMessage):
+#    if intentMessage.intent.intent_name == 'franc:addToList':
+#        addToList(hermes, intentMessage)
+#    elif intentMessage.intent.intent_name == 'franc:checkList':
+#        checkList(hermes, intentMessage)
 
 if __name__=="__main__":
     config = readConfigurationFile(CONFIG_INI)
     with Hermes("localhost:1883") as h:
         updateLists(h)
-        h.subscribe_intents(intentCallback).start()
+        h.subscribe_intent("franc:addToList", addToList) \
+         .subscribe_intent("franc:checkList", checkList) \
+         .loop_forever()
+        #h.subscribe_intents(intentCallback).start()
 
 # TODO: Need to find a way to periodically invoke updateLists
