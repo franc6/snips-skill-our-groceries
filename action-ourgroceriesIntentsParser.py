@@ -107,6 +107,11 @@ def get_update_payload(hermes):
 
 def add_to_list(hermes, intent_message):
     """Adds the given item and quantity to the given list"""
+    while hermes.doing_injection:
+        sentence = \
+            "I am updating your lists and will add your item in a moment."
+        hermes.publish_continue_session(intent_message.session_id, sentence)
+        sleep(10)
     quantity = 1
     what = None
     which_list = None
@@ -132,11 +137,16 @@ def add_to_list(hermes, intent_message):
     client.add_to_list(what, quantity, which_list)
 
     # Respond that we added it to the list
-    sentence = "Added {q} {w} to the {l} list.".format(q=quantity, w=what, l=which_list)
+    sentence = "I added {q} {w} to the {l} list.".format(q=quantity, w=what, l=which_list)
     hermes.publish_end_session(intent_message.session_id, sentence)
 
 def check_list(hermes, intent_message):
     """Checks the given list for an item and speaks if it's there"""
+    while hermes.doing_injection:
+        sentence = "I am updating your lists and will check in a moment."
+        hermes.publish_continue_session(intent_message.session_id, sentence)
+        sleep(10)
+        
     quantity = '1'
     what = None
     which_list = None
@@ -179,9 +189,8 @@ def check_list(hermes, intent_message):
                 quantity = res.group(3)
                 if quantity is None:
                     quantity = "1"
-                sentence = "There {v} {q} {w} on the {l} list" \
-                    .format(v="are" if int(quantity) > 1 else "is",
-                            q=quantity, w=what, l=which_list)
+                sentence = "You have {q} {w} on the {l} list" \
+                    .format(q=quantity, w=what, l=which_list)
             break
     if sentence is None:
         sentence = "{w} is not on the {l} list." \
@@ -192,6 +201,7 @@ def check_list(hermes, intent_message):
 
 def inject_lists_and_items(hermes):
     """ Injects the lists and items"""
+    hermes.doing_injection = True
     payload = get_update_payload(hermes) + '\n'
     pipe = Popen(['/usr/bin/mosquitto_pub',
                   '-t',
@@ -202,10 +212,12 @@ def inject_lists_and_items(hermes):
                  stdout=PIPE,
                  stderr=STDOUT)
     pipe.communicate(input=payload.encode('utf-8'))
+    hermes.doing_injection = False
 
 def main(hermes):
     """main function"""
     hermes.skill_config = read_configuration_file(CONFIG_INI)
+    hermes.doing_injection = False
     inject_lists_and_items(hermes)
     injection_timer = RepeatTimer(3600, inject_lists_and_items, hermes)
     injection_timer.start()
