@@ -122,17 +122,24 @@ def add_to_list(hermes, intent_message):
         for (slot_value, slot) in intent_message.slots.items:
             if slot_value == 'what':
                 what = slot[0].raw_value
+                print("Got what: ", what)
             elif slot_value == 'list':
                 which_list = slot[0].slot_value.value.value
+                print("Got list: ", which_list)
             elif slot_value == 'quantity':
                 quantity = int(float(slot[0].slot_value.value.value))
-    if what is None:
-        return
+                print("Got quantity: ", quantity)
+
     # Set whichList to defaultlist if it's None or matches 'our groceries'
     # The API would use the same list if we passed None, but the code below
     # would fail when giving the response.
     if (which_list is None) or (which_list == 'our groceries'):
         which_list = hermes.skill_config['secret']['defaultlist']
+
+    if what is None:
+        sentence = "I don't know what to add to the {l} list.".format(l=which_list)
+        hermes.publish_end_session(intent_message.session_id, sentence)
+        return
 
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(hermes.skill_config['secret']['username'],
@@ -161,15 +168,21 @@ def check_list(hermes, intent_message):
         for (slot_value, slot) in intent_message.slots.items:
             if slot_value == 'what':
                 what = slot[0].raw_value
+                print("Got what: ", what)
             elif slot_value == 'list':
                 which_list = slot[0].slot_value.value.value
-    if what is None:
-        return
+                print("Got list: ", which_list)
+
     # Set whichList to defaultlist if it's None or matches 'our groceries'
     # The API would use the same list if we passed None, but the code below
     # would fail when giving the response.
     if (which_list is None) or (which_list == 'our groceries'):
         which_list = hermes.skill_config['secret']['defaultlist']
+
+    if what is None:
+        sentence = "I don't know what to check on the {l} list.".format(l=which_list)
+        hermes.publish_end_session(intent_message.session_id, sentence)
+        return
 
     client = our_groceries_client.OurGroceriesClient()
     client.authenticate(hermes.skill_config['secret']['username'],
