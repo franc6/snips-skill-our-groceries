@@ -116,19 +116,9 @@ def add_to_list(hermes, intent_message):
     what = None
     which_list = None
     if intent_message.slots is not None:
-        #what = intent_message.slots.what[0].raw_value
-        #which_list = intent_message.slots.list[0].value.value
-        #quantity = int(float(intent_message.slots.quantity[0].value.value))
-        for (slot_value, slot) in intent_message.slots.items:
-            if slot_value == 'what':
-                what = slot[0].raw_value
-                print("Got what: ", what)
-            elif slot_value == 'list':
-                which_list = slot[0].slot_value.value.value
-                print("Got list: ", which_list)
-            elif slot_value == 'quantity':
-                quantity = int(float(slot[0].slot_value.value.value))
-                print("Got quantity: ", quantity)
+        what = intent_message.slots.what[0].raw_value
+        which_list = intent_message.slots.list[0].slot_value.value.value
+        quantity = int(float(intent_message.slots.quantity[0].slot_value.value.value))
 
     # Set whichList to defaultlist if it's None or matches 'our groceries'
     # The API would use the same list if we passed None, but the code below
@@ -163,15 +153,8 @@ def check_list(hermes, intent_message):
     which_list = None
     sentence = None
     if intent_message.slots is not None:
-        #what = intent_message.slots.what[0].raw_value
-        #which_list = intent_message.slots.list[0].value.value
-        for (slot_value, slot) in intent_message.slots.items:
-            if slot_value == 'what':
-                what = slot[0].raw_value
-                print("Got what: ", what)
-            elif slot_value == 'list':
-                which_list = slot[0].slot_value.value.value
-                print("Got list: ", which_list)
+        what = intent_message.slots.what[0].raw_value
+        which_list = intent_message.slots.list[0].slot_value.value.value
 
     # Set whichList to defaultlist if it's None or matches 'our groceries'
     # The API would use the same list if we passed None, but the code below
