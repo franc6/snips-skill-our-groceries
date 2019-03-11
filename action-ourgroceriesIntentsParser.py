@@ -4,17 +4,29 @@
 Subscribes to franc:addToList and franc:checkList intents and processes them.
 """
 import ConfigParser
+import gettext
 from io import open
 import json
 import re
 from subprocess import Popen, PIPE, STDOUT
+import sys
 from threading import Timer
 from hermes_python.hermes import Hermes
 from hermes_python.ontology import *
 import our_groceries_client
 
-CONFIG_INI = "config.ini"
-CONFIG_ENCODING = "utf-8"
+
+# Set up locale
+locale.setlocale(locale.LC_ALL, '')
+# Set gettext to be the right thing for python2 and python3
+if sys.version_info[0] < 3:
+    gettext = gettext.translation('messages', localedir='locales').ugettext
+else:
+    gettext.bindtextdomain('messages', localedir)
+    gettext = gettext.gettext
+
+CONFIG_INI = 'config.ini'
+CONFIG_ENCODING = 'utf-8'
 __all__ = []
 
 
@@ -108,8 +120,7 @@ def get_update_payload(hermes):
 def add_to_list(hermes, intent_message):
     """Adds the given item and quantity to the given list"""
     while hermes.doing_injection:
-        sentence = \
-            "I am updating your lists and will add your item in a moment."
+        sentence = gettext("STR_UPDATING_WAIT_ADD")
         hermes.publish_continue_session(intent_message.session_id, sentence)
         sleep(10)
     quantity = 1
@@ -120,14 +131,15 @@ def add_to_list(hermes, intent_message):
         which_list = intent_message.slots.list[0].slot_value.value.value
         quantity = int(float(intent_message.slots.quantity[0].slot_value.value.value))
 
-    # Set whichList to defaultlist if it's None or matches 'our groceries'
-    # The API would use the same list if we passed None, but the code below
-    # would fail when giving the response.
-    if (which_list is None) or (which_list == 'our groceries'):
+    # Set whichList to defaultlist if it's None or matches
+    # gettext("STR_DEFAULT_LIST") The API would use the same list if we
+    # passed None, but the code below would fail when giving the
+    # response.
+    if (which_list is None) or (which_list == gettext("STR_DEFAULT_LIST")):
         which_list = hermes.skill_config['secret']['defaultlist']
 
     if what is None:
-        sentence = "I don't know what to add to the {l} list.".format(l=which_list)
+        sentence = gettext("STR_ADD_MISSING_WHAT").format(l=which_list)
         hermes.publish_end_session(intent_message.session_id, sentence)
         return
 
@@ -138,13 +150,14 @@ def add_to_list(hermes, intent_message):
     client.add_to_list(what, quantity, which_list)
 
     # Respond that we added it to the list
-    sentence = "I added {q} {w} to the {l} list.".format(q=quantity, w=what, l=which_list)
+    sentence = gettext("STR_ADD_SUCCESS_DETAILS") \
+        .format(q=quantity, w=what, l=which_list)
     hermes.publish_end_session(intent_message.session_id, sentence)
 
 def check_list(hermes, intent_message):
     """Checks the given list for an item and speaks if it's there"""
     while hermes.doing_injection:
-        sentence = "I am updating your lists and will check in a moment."
+        sentence = gettext("STR_UPDATING_WAIT_CHECK")
         hermes.publish_continue_session(intent_message.session_id, sentence)
         sleep(10)
         
@@ -156,14 +169,15 @@ def check_list(hermes, intent_message):
         what = intent_message.slots.what[0].raw_value
         which_list = intent_message.slots.list[0].slot_value.value.value
 
-    # Set whichList to defaultlist if it's None or matches 'our groceries'
-    # The API would use the same list if we passed None, but the code below
-    # would fail when giving the response.
-    if (which_list is None) or (which_list == 'our groceries'):
+    # Set whichList to defaultlist if it's None or matches
+    # gettext("STR_DEFAULT_LIST") The API would use the same list if we
+    # passed None, but the code below would fail when giving the
+    # response.
+    if (which_list is None) or (which_list == gettext("STR_DEFAULT_LIST")):
         which_list = hermes.skill_config['secret']['defaultlist']
 
     if what is None:
-        sentence = "I don't know what to check on the {l} list.".format(l=which_list)
+        sentence = gettext("STR_CHECK_MISSING_WHAT").format(l=which_list)
         hermes.publish_end_session(intent_message.session_id, sentence)
         return
 
@@ -174,30 +188,30 @@ def check_list(hermes, intent_message):
     items = client._get_list_data(which_list)
     for item in items:
         crossed_off = item.get('crossedOff', False)
-        # Note our two primary regular expressions are commented out below
-        # and combined into regex.  The uncommented regex line below this
-        # is just building the expression all at once.
+        # Note our two primary regular expressions are commented out
+        # below and combined into regex.  The uncommented regex line
+        # below this is just building the expression all at once.
         #regex1 = r"^" + re.escape(what) + r" *$"
         #regex2 = r"^" + re.escape(what) + r"\ \((\d+)\)$"
         #regex = r"(" + regex1 + r")|(" + regex2 + r")"
-        regex = r"(^" + re.escape(what) + r" *$)|(^" + re.escape(what) + r"\ \((\d+)\)$)"
+        regex = r'(^' + re.escape(what) + r' *$)|(^' + re.escape(what) + r'\ \((\d+)\)$)'
         res = re.search(regex, item['value'], re.IGNORECASE)
-        # Note the following two conditions are not combined because we want to
-        # break the loop even if the item is crossed off.  If it's crossed off,
-        # we don't need to keep looking for a match -- you can't have the same
-        # item on the list with different case.  Perhaps with different
-        # spelling, but we're not doing sounds like checking here. :(
+        # Note the following two conditions are not combined because we
+        # want to break the loop even if the item is crossed off.  If
+        # it's crossed off, we don't need to keep looking for a match --
+        # you can't have the same item on the list with different case.
+        # Perhaps with different spelling, but we're not doing sounds
+        # like checking here. :(
         if res is not None:
             if not crossed_off:
                 quantity = res.group(3)
                 if quantity is None:
-                    quantity = "1"
-                sentence = "You have {q} {w} on the {l} list" \
+                    quantity = '1'
+                sentence = gettext("STR_CHECK_SUCCESS_DETAILS") \
                     .format(q=quantity, w=what, l=which_list)
             break
     if sentence is None:
-        sentence = "{w} is not on the {l} list." \
-            .format(w=what, l=which_list)
+        sentence = gettext("STR_CHECK_NOT_FOUND").format(w=what, l=which_list)
 
     # Respond that we added it to the list
     hermes.publish_end_session(intent_message.session_id, sentence)
@@ -224,14 +238,14 @@ def main(hermes):
     inject_lists_and_items(hermes)
     injection_timer = RepeatTimer(3600, inject_lists_and_items, hermes)
     injection_timer.start()
-    hermes.subscribe_intent("franc:addToList", add_to_list) \
-        .subscribe_intent("franc:checkList", check_list) \
+    hermes.subscribe_intent('franc:addToList', add_to_list) \
+        .subscribe_intent('franc:checkList', check_list) \
         .loop_forever()
     # Note this isn't really necessary, but just in case loop_forever()
     # doesn't, we should kill the timer.
     injection_timer.stop()
 
 
-if __name__ == "__main__":
-    with Hermes("localhost:1883") as h:
+if __name__ == '__main__':
+    with Hermes('localhost:1883') as h:
         main(h)

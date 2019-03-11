@@ -1,0 +1,49 @@
+# Strings for action-ourgroceriesIntentsParser
+# Copyright (C) 2019 Thomas J. Francis, Jr.
+# Thomas J. Francis, Jr., 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: snips-skill-our-groceries 1.0\n"
+"POT-Creation-Date: 2019-03-11 13:00-0400\n"
+"PO-Revision-Date: 2019-03-11 13:05-0400\n"
+"Last-Translator: Thomas J. Francis, Jr.\n"
+"Language-Team: English\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+#: action-ourgroceriesIntentsParser.py:113
+msgid "STR_UPDATING_WAIT_ADD"
+msgstr "I am updating your lists and will add your item in a moment."
+
+#: action-ourgroceriesIntentsParser.py:128
+#: action-ourgroceriesIntentsParser.py:166
+msgid "STR_DEFAULT_LIST"
+msgstr "our groceries"
+
+#: action-ourgroceriesIntentsParser.py:132
+msgid "STR_ADD_MISSING_WHAT"
+msgstr "I don't know what to add to the {l} list."
+
+#: action-ourgroceriesIntentsParser.py:143
+msgid "STR_ADD_SUCCESS_DETAILS"
+msgstr "I added {q} {w} to the {l} list."
+
+#: action-ourgroceriesIntentsParser.py:150
+msgid "STR_UPDATING_WAIT_CHECK"
+msgstr "I am updating your lists and will check in a moment."
+
+#: action-ourgroceriesIntentsParser.py:170
+msgid "STR_CHECK_MISSING_WHAT"
+msgstr "I don't know what to check on the {l} list."
+
+#: action-ourgroceriesIntentsParser.py:200
+msgid "STR_CHECK_SUCCESS_DETAILS"
+msgstr "You have {q} {w} on the {l} list"
+
+#: action-ourgroceriesIntentsParser.py:204
+msgid "STR_CHECK_NOT_FOUND"
+msgstr "{w} is not on the {l} list."
+
