@@ -7,6 +7,7 @@ import ConfigParser
 import gettext
 from io import open
 import json
+import locale
 import re
 from subprocess import Popen, PIPE, STDOUT
 import sys
@@ -22,7 +23,7 @@ locale.setlocale(locale.LC_ALL, '')
 if sys.version_info[0] < 3:
     gettext = gettext.translation('messages', localedir='locales').ugettext
 else:
-    gettext.bindtextdomain('messages', localedir)
+    gettext.bindtextdomain('messages', 'locales')
     gettext = gettext.gettext
 
 CONFIG_INI = 'config.ini'
