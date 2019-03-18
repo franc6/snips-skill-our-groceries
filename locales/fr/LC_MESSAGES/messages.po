@@ -16,7 +16,7 @@ msgstr ""
 
 #: action-ourgroceriesIntentsParser.py:113
 msgid "STR_UPDATING_WAIT_ADD"
-msgstr "Je mets à jour vos listes et ajouterai votre article dans un instant."
+msgstr "Je suis en train de mettre à jour vos listes, veuillez réessayer dans un instant."
 
 #: action-ourgroceriesIntentsParser.py:128
 #: action-ourgroceriesIntentsParser.py:166
@@ -33,7 +33,7 @@ msgstr "J'ai ajouté {q} {w} à la liste {l}."
 
 #: action-ourgroceriesIntentsParser.py:150
 msgid "STR_UPDATING_WAIT_CHECK"
-msgstr "Je mets à jour vos listes et vérifierai dans un instant."
+msgstr "Je suis en train de mettre à jour vos listes, veuillez réessayer dans un instant."
 
 #: action-ourgroceriesIntentsParser.py:170
 msgid "STR_CHECK_MISSING_WHAT"

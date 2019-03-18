@@ -11,7 +11,7 @@ import locale
 import re
 from subprocess import Popen, PIPE, STDOUT
 import sys
-from threading import Timer
+from threading import Timer, Lock
 from hermes_python.hermes import Hermes
 from hermes_python.ontology import *
 import our_groceries_client
@@ -50,8 +50,8 @@ class RepeatTimer(object):
     def _run(self):
         """_run is called when the timer goes off, and invokes self.function"""
         self.is_running = False
-        self.start()  # Start the timer again!
         self.function(*self.args, **self.kwargs)
+        self.start()  # Start the timer again!
 
     def start(self):
         """Checks that the timer isn't running, and if not, creates a timer,
@@ -120,10 +120,11 @@ def get_update_payload(hermes):
 
 def add_to_list(hermes, intent_message):
     """Adds the given item and quantity to the given list"""
-    while hermes.doing_injection:
+    if not hermes.injection_lock.acquire(False):
         sentence = gettext("STR_UPDATING_WAIT_ADD")
-        hermes.publish_continue_session(intent_message.session_id, sentence)
-        sleep(10)
+        hermes.publish_end_session(intent_message.session_id, sentence)
+        return
+
     quantity = 1
     what = None
     which_list = None
@@ -142,6 +143,7 @@ def add_to_list(hermes, intent_message):
     if what is None:
         sentence = gettext("STR_ADD_MISSING_WHAT").format(l=which_list)
         hermes.publish_end_session(intent_message.session_id, sentence)
+        hermes.injection_lock.release()
         return
 
     client = our_groceries_client.OurGroceriesClient()
@@ -154,14 +156,17 @@ def add_to_list(hermes, intent_message):
     sentence = gettext("STR_ADD_SUCCESS_DETAILS") \
         .format(q=quantity, w=what, l=which_list)
     hermes.publish_end_session(intent_message.session_id, sentence)
+    hermes.injection_lock.release()
 
 def check_list(hermes, intent_message):
     """Checks the given list for an item and speaks if it's there"""
-    while hermes.doing_injection:
-        sentence = gettext("STR_UPDATING_WAIT_CHECK")
-        hermes.publish_continue_session(intent_message.session_id, sentence)
-        sleep(10)
+    if not hermes.injection_lock.acquire(False):
+        sentence = gettext("STR_UPDATING_WAIT_ADD")
+        hermes.publish_end_session(intent_message.session_id, sentence)
+        return
         
+    hermes.injection_lock.release()
+
     quantity = '1'
     what = None
     which_list = None
@@ -219,7 +224,7 @@ def check_list(hermes, intent_message):
 
 def inject_lists_and_items(hermes):
     """ Injects the lists and items"""
-    hermes.doing_injection = True
+    hermes.injection_lock.acquire()
     payload = get_update_payload(hermes) + '\n'
     pipe = Popen(['/usr/bin/mosquitto_pub',
                   '-t',
@@ -230,12 +235,12 @@ def inject_lists_and_items(hermes):
                  stdout=PIPE,
                  stderr=STDOUT)
     pipe.communicate(input=payload.encode('utf-8'))
-    hermes.doing_injection = False
+    hermes.injection_lock.release()
 
 def main(hermes):
     """main function"""
     hermes.skill_config = read_configuration_file(CONFIG_INI)
-    hermes.doing_injection = False
+    hermes.injection_lock = Lock()
     inject_lists_and_items(hermes)
     injection_timer = RepeatTimer(3600, inject_lists_and_items, hermes)
     injection_timer.start()
