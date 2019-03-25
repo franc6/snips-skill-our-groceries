@@ -175,7 +175,7 @@ def check_list(hermes, intent_message):
         if intent_message.slots.what is not None and intent_message.slots.what[0] is not None:
             what = intent_message.slots.what[0].raw_value
         if intent_message.slots.list is not None and intent_message.slots.list[0] is not None:
-        which_list = intent_message.slots.list[0].slot_value.value.value
+            which_list = intent_message.slots.list[0].slot_value.value.value
 
     # Set whichList to defaultlist if it's None or matches
     # gettext("STR_DEFAULT_LIST") The API would use the same list if we
