@@ -242,14 +242,14 @@ def main(hermes):
     hermes.skill_config = read_configuration_file(CONFIG_INI)
     hermes.injection_lock = Lock()
     inject_lists_and_items(hermes)
-    injection_timer = RepeatTimer(3600, inject_lists_and_items, hermes)
-    injection_timer.start()
+    #injection_timer = RepeatTimer(3600, inject_lists_and_items, hermes)
+    #injection_timer.start()
     hermes.subscribe_intent('franc:addToList', add_to_list) \
         .subscribe_intent('franc:checkList', check_list) \
         .loop_forever()
     # Note this isn't really necessary, but just in case loop_forever()
     # doesn't, we should kill the timer.
-    injection_timer.stop()
+    #injection_timer.stop()
 
 
 if __name__ == '__main__':
