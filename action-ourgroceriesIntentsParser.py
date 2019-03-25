@@ -172,7 +172,9 @@ def check_list(hermes, intent_message):
     which_list = None
     sentence = None
     if intent_message.slots is not None:
-        what = intent_message.slots.what[0].raw_value
+        if intent_message.slots.what is not None and intent_message.slots.what[0] is not None:
+            what = intent_message.slots.what[0].raw_value
+        if intent_message.slots.list is not None and intent_message.slots.list[0] is not None:
         which_list = intent_message.slots.list[0].slot_value.value.value
 
     # Set whichList to defaultlist if it's None or matches
