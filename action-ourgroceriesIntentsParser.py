@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 """Snips skill action.
 
 Subscribes to franc:addToList and franc:checkList intents and processes them.
 """
-import configparser
+import ConfigParser
 import gettext
 from io import open
 import json
@@ -69,8 +69,8 @@ class RepeatTimer(object):
             self.is_running = False
 
 
-class SnipsConfigParser(configparser.ConfigParser):
-    """Subclass configparser.ConfigParser to add to_dict method."""
+class SnipsConfigParser(ConfigParser.SafeConfigParser):
+    """Subclass ConfigParser.SafeConfigParser to add to_dict method."""
     def to_dict(self):
         """Returns a dictionary of sections and options from the config file"""
         return {section: {option_name : option for option_name,
@@ -84,7 +84,7 @@ def read_configuration_file(file_name):
             config_parser = SnipsConfigParser()
             config_parser.readfp(file)
             return config_parser.to_dict()
-    except (IOError, configparser.Error):
+    except (IOError, ConfigParser.Error):
         return dict()
 
 def get_items_payload(client, list_names):
