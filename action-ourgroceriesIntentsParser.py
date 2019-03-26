@@ -129,9 +129,12 @@ def add_to_list(hermes, intent_message):
     what = None
     which_list = None
     if intent_message.slots is not None:
-        what = intent_message.slots.what[0].raw_value
-        which_list = intent_message.slots.list[0].slot_value.value.value
-        quantity = int(float(intent_message.slots.quantity[0].slot_value.value.value))
+        if intent_message.slots.what is not None and intent_message.slots.what[0] is not None:
+            what = intent_message.slots.what[0].raw_value
+        if intent_message.slots.list is not None and intent_message.slots.list[0] is not None:
+            which_list = intent_message.slots.list[0].slot_value.value.value
+        if intent_message.slots.quantity is not None and intent_message.slots.quantity[0] is not None:
+            quantity = int(float(intent_message.slots.quantity[0].slot_value.value.value))
 
     # Set whichList to defaultlist if it's None or matches
     # gettext("STR_DEFAULT_LIST") The API would use the same list if we
