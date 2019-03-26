@@ -1,4 +1,5 @@
 #hermes bindings
 hermes-python>=0.3.3
 future
+requests
 
