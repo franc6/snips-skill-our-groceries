@@ -2,5 +2,3 @@
 hermes-python>=0.3.3
 future
 
-# Our groceries API
-our-groceries-client
