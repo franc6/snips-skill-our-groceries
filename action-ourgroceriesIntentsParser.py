@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """Snips skill action.
 
 Subscribes to franc:addToList and franc:checkList intents and processes them.
@@ -146,7 +146,8 @@ def add_to_list(hermes, intent_message):
     # gettext("STR_DEFAULT_LIST") The API would use the same list if we
     # passed None, but the code below would fail when giving the
     # response.
-    if (which_list is None) or (which_list == gettext("STR_DEFAULT_LIST")):
+    if (which_list is None) or \
+       (which_list.casefold() == gettext("STR_DEFAULT_LIST").casefold()):
         which_list = hermes.skill_config['secret']['defaultlist']
 
     if what is None:
@@ -190,7 +191,8 @@ def check_list(hermes, intent_message):
     # gettext("STR_DEFAULT_LIST") The API would use the same list if we
     # passed None, but the code below would fail when giving the
     # response.
-    if (which_list is None) or (which_list == gettext("STR_DEFAULT_LIST")):
+    if (which_list is None) or \
+       (which_list.casefold() == gettext("STR_DEFAULT_LIST").casefold()):
         which_list = hermes.skill_config['secret']['defaultlist']
 
     if what is None:
