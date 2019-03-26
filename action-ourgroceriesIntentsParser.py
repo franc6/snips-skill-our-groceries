@@ -120,7 +120,7 @@ def get_update_payload(hermes):
 
 def add_to_list(hermes, intent_message):
     """Adds the given item and quantity to the given list"""
-    if not hermes.injection_lock.acquire(False):
+    if hermes.injection_lock:
         sentence = gettext("STR_UPDATING_WAIT_ADD")
         hermes.publish_end_session(intent_message.session_id, sentence)
         return
@@ -143,7 +143,6 @@ def add_to_list(hermes, intent_message):
     if what is None:
         sentence = gettext("STR_ADD_MISSING_WHAT").format(l=which_list)
         hermes.publish_end_session(intent_message.session_id, sentence)
-        hermes.injection_lock.release()
         return
 
     client = our_groceries_client.OurGroceriesClient()
@@ -156,17 +155,14 @@ def add_to_list(hermes, intent_message):
     sentence = gettext("STR_ADD_SUCCESS_DETAILS") \
         .format(q=quantity, w=what, l=which_list)
     hermes.publish_end_session(intent_message.session_id, sentence)
-    hermes.injection_lock.release()
 
 def check_list(hermes, intent_message):
     """Checks the given list for an item and speaks if it's there"""
-    if not hermes.injection_lock.acquire(False):
+    if hermes.injection_lock:
         sentence = gettext("STR_UPDATING_WAIT_ADD")
         hermes.publish_end_session(intent_message.session_id, sentence)
         return
         
-    hermes.injection_lock.release()
-
     quantity = '1'
     what = None
     which_list = None
@@ -226,7 +222,7 @@ def check_list(hermes, intent_message):
 
 def inject_lists_and_items(hermes):
     """ Injects the lists and items"""
-    hermes.injection_lock.acquire()
+    hermes.injection_lock = True
     payload = get_update_payload(hermes) + '\n'
     pipe = Popen(['/usr/bin/mosquitto_pub',
                   '-t',
@@ -237,12 +233,12 @@ def inject_lists_and_items(hermes):
                  stdout=PIPE,
                  stderr=STDOUT)
     pipe.communicate(input=payload.encode('utf-8'))
-    hermes.injection_lock.release()
+    hermes.injection_lock = False
 
 def main(hermes):
     """main function"""
     hermes.skill_config = read_configuration_file(CONFIG_INI)
-    hermes.injection_lock = Lock()
+    hermes.injection_lock = False
     inject_lists_and_items(hermes)
     #injection_timer = RepeatTimer(3600, inject_lists_and_items, hermes)
     #injection_timer.start()
