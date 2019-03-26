@@ -129,12 +129,18 @@ def add_to_list(hermes, intent_message):
     what = None
     which_list = None
     if intent_message.slots is not None:
-        if intent_message.slots.what is not None and intent_message.slots.what[0] is not None:
+        try:
             what = intent_message.slots.what[0].raw_value
-        if intent_message.slots.list is not None and intent_message.slots.list[0] is not None:
+        except (TypeError, LookupError, ValueError):
+            pass
+        try:
             which_list = intent_message.slots.list[0].slot_value.value.value
-        if intent_message.slots.quantity is not None and intent_message.slots.quantity[0] is not None:
+        except (TypeError, LookupError, ValueError):
+            pass
+        try:
             quantity = int(float(intent_message.slots.quantity[0].slot_value.value.value))
+        except (TypeError, LookupError, ValueError):
+            pass
 
     # Set whichList to defaultlist if it's None or matches
     # gettext("STR_DEFAULT_LIST") The API would use the same list if we
@@ -171,10 +177,14 @@ def check_list(hermes, intent_message):
     which_list = None
     sentence = None
     if intent_message.slots is not None:
-        if intent_message.slots.what is not None and intent_message.slots.what[0] is not None:
+        try:
             what = intent_message.slots.what[0].raw_value
-        if intent_message.slots.list is not None and intent_message.slots.list[0] is not None:
+        except (TypeError, LookupError, ValueError):
+            pass
+        try:
             which_list = intent_message.slots.list[0].slot_value.value.value
+        except (TypeError, LookupError, ValueError):
+            pass
 
     # Set whichList to defaultlist if it's None or matches
     # gettext("STR_DEFAULT_LIST") The API would use the same list if we
