@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import gettext
 import json
 import locale
@@ -161,7 +162,7 @@ class OurGroceriesApp(HermesSnipsApp):
         operations = []
         client = our_groceries_client.OurGroceriesClient()
         client.authenticate(self.config['secret']['username'],
-                            self.config['secret']['password']
+                            self.config['secret']['password'],
                             self.config['secret']['defaultlist'])
 
         list_names = []
