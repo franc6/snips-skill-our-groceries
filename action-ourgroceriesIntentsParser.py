@@ -146,7 +146,7 @@ class OurGroceriesApp(HermesSnipsApp):
         self.inject_lists_and_items()
         #self.injection_timer.start()
 
-    def get_items_payload(client, list_names):
+    def get_items_payload(self, client, list_names):
         item_names = []
         for list_name in list_names:
             items = client._get_list_data(list_name)
@@ -155,7 +155,7 @@ class OurGroceriesApp(HermesSnipsApp):
         item_names = list(set(item_names))
         return ['addFromVanilla', {'our_groceries_item_name': item_names}]
 
-    def get_lists_payload(list_names):
+    def get_lists_payload(self, list_names):
         return ['addFromVanilla', {'our_groceries_list_name': list_names}]
 
     def get_update_payload(self):
@@ -169,14 +169,14 @@ class OurGroceriesApp(HermesSnipsApp):
         for list_info in client._lists:
             list_names.append(list_info['name'])
 
-        operations.append(get_lists_payload(list_names))
-        operations.append(get_items_payload(client, list_names))
+        operations.append(self.get_lists_payload(list_names))
+        operations.append(self.get_items_payload(client, list_names))
         payload = {'operations': operations}
         return json.dumps(payload)
 
     def inject_lists_and_items(self):
         self.injection_lock = True
-        payload = get_update_payload(self) + '\n'
+        payload = self.get_update_payload() + '\n'
         pipe = Popen(['/usr/bin/mosquitto_pub',
                       '-t',
                       'hermes/injection/perform',
