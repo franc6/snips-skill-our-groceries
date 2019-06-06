@@ -26,7 +26,7 @@ class OurGroceriesApp(HermesSnipsApp):
     #injection_timer = RepeatTimer(3600, self.inject_lists_and_items, self)
 
     @intent('franc:addToList')
-    def intent(self, hermes, intent_message):
+    def add_to_list(self, hermes, intent_message):
         if self.injection_lock:
             sentence = gettext("STR_UPDATING_WAIT_ADD")
             hermes.publish_end_session(intent_message.session_id, sentence)
@@ -74,7 +74,7 @@ class OurGroceriesApp(HermesSnipsApp):
         hermes.publish_end_session(intent_message.session_id, sentence)
 
     @intent('franc:checkList')
-    def intent(self, hermes, intent_message):
+    def check_list(self, hermes, intent_message):
         if self.injection_lock:
             sentence = gettext("STR_UPDATING_WAIT_ADD")
             hermes.publish_end_session(intent_message.session_id, sentence)
