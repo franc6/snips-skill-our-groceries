@@ -15,8 +15,7 @@ fi
 
 . ${VENV}/bin/activate
 
-#pip install -r requirements.txt
-pip3 install snipskit[hermes,mqtt]
+pip3 install -r requirements.txt
 
 if [ ! -e config.ini ]
 then

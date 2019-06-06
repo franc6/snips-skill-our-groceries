@@ -1,5 +1,3 @@
-#hermes bindings
-hermes-python>=0.3.3
 future
 requests
-
+snipskit[hermes,mqtt]>=0.5.3
