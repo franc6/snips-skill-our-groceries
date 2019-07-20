@@ -80,6 +80,7 @@ class OurGroceriesApp(HermesSnipsApp):
             hermes.publish_end_session(intent_message.session_id, sentence)
             return
 
+        sentence = None
         quantity = '1'
         what = None
         which_list = None
