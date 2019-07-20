@@ -1,4 +1,6 @@
 # snips-skill-our-groceries
+[![License](https://img.shields.io/github/license/franc6/snips-skill-our-groceries.svg)](https://github.com/franc6/snips-skill-our-groceries/blob/master/LICENSE)
+
 Snips actions for interacting with Our Groceries
 
 If you're not using my Our Groceries app, you'll need to modify this somewhat.
