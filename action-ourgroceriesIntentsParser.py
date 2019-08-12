@@ -11,7 +11,7 @@ import our_groceries_client
 from snipskit.hermes.apps import HermesSnipsApp
 from snipskit.config import AppConfig
 from snipskit.hermes.decorators import intent
-from heremes_python.ontology.injection import (
+from hermes_python.ontology.injection import (
     InjectionRequestMessage,
     AddFromVanillaInjectionRequest
     )
