@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+"""Action for the Our Groceries skill"""
+
 import gettext
-import json
 import locale
 import re
-from subprocess import Popen, PIPE, STDOUT
 import sys
 
 import our_groceries_client
@@ -11,6 +11,10 @@ import our_groceries_client
 from snipskit.hermes.apps import HermesSnipsApp
 from snipskit.config import AppConfig
 from snipskit.hermes.decorators import intent
+from heremes_python.ontology.injection import (
+    InjectionRequestMessage,
+    AddFromVanillaInjectionRequest
+    )
 
 # Set up localse
 locale.setlocale(locale.LC_ALL, '')
@@ -22,16 +26,12 @@ else:
     gettext = gettext.gettext
 
 class OurGroceriesApp(HermesSnipsApp):
-    injection_lock = False
+    """HermeseSnipsApp for Our Groceries skill"""
     #injection_timer = RepeatTimer(3600, self.inject_lists_and_items, self)
 
     @intent('franc:addToList')
     def add_to_list(self, hermes, intent_message):
-        if self.injection_lock:
-            sentence = gettext("STR_UPDATING_WAIT_ADD")
-            hermes.publish_end_session(intent_message.session_id, sentence)
-            return
-
+        """Intent handler for addToList"""
         quantity = 1
         what = None
         which_list = None
@@ -75,11 +75,7 @@ class OurGroceriesApp(HermesSnipsApp):
 
     @intent('franc:checkList')
     def check_list(self, hermes, intent_message):
-        if self.injection_lock:
-            sentence = gettext("STR_UPDATING_WAIT_ADD")
-            hermes.publish_end_session(intent_message.session_id, sentence)
-            return
-
+        """Intent handler for checkList"""
         sentence = None
         quantity = '1'
         what = None
@@ -144,22 +140,26 @@ class OurGroceriesApp(HermesSnipsApp):
         hermes.publish_end_session(intent_message.session_id, sentence)
 
     def initialize(self):
+        """Initialization; inject our lists and items"""
         self.inject_lists_and_items()
         #self.injection_timer.start()
 
     def get_items_payload(self, client, list_names):
+        """Gets the items as an AddFromVanillaInjectionRequest"""
         item_names = []
         for list_name in list_names:
             items = client._get_list_data(list_name)
             for item in items:
                 item_names.append(item['value'])
         item_names = list(set(item_names))
-        return ['addFromVanilla', {'our_groceries_item_name': item_names}]
+        return AddFromVanillaInjectionRequest({'our_groceries_item_name': item_names})
 
     def get_lists_payload(self, list_names):
-        return ['addFromVanilla', {'our_groceries_list_name': list_names}]
+        """Gets the lists as an AddFromVanillaInjectionRequest"""
+        return AddFromVanillaInjectionRequest({'our_groceries_list_name': list_names})
 
     def get_update_payload(self):
+        """Gets all injection requests as an InjectionRequestMessage"""
         operations = []
         client = our_groceries_client.OurGroceriesClient()
         client.authenticate(self.config['secret']['username'],
@@ -172,22 +172,12 @@ class OurGroceriesApp(HermesSnipsApp):
 
         operations.append(self.get_lists_payload(list_names))
         operations.append(self.get_items_payload(client, list_names))
-        payload = {'operations': operations}
-        return json.dumps(payload)
+        return InjectionRequestMessage(operations)
 
     def inject_lists_and_items(self):
-        self.injection_lock = True
-        payload = self.get_update_payload() + '\n'
-        pipe = Popen(['/usr/bin/mosquitto_pub',
-                      '-t',
-                      'hermes/injection/perform',
-                      '-l'
-                      ],
-                     stdin=PIPE,
-                     stdout=PIPE,
-                     stderr=STDOUT)
-        pipe.communicate(input=payload.encode('utf-8'))
-        self.injection_lock = False
+        """Requests an injection of the lists and items"""
+        payload = self.get_update_payload()
+        self.hermes.request_injection(payload)
 
 if __name__ == "__main__":
     OurGroceriesApp(config=AppConfig())
