@@ -13,3 +13,5 @@ existing lists and items on Our Groceries.
 
 If you'd like to help with translations, please fork this repository and submit
 pull requests.  Please include both the .po and .mo files for translations.
+
+[![Buy me some pizza](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/qpunYPZx5)
