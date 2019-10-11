@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-MSGFMT=/usr/local/Cellar/python/3.7.2_2/Frameworks/Python.framework/Versions/3.7/share/doc/python3.7/examples/Tools/i18n/msgfmt.py
+MSGFMT=/usr/local/Cellar/python/3.7.4/Frameworks/Python.framework/Versions/3.7/share/doc/python3.7/examples/Tools/i18n/msgfmt.py
 
 for pofile in locales/*/LC_MESSAGES/messages.po
 do
