@@ -1,17 +1,19 @@
-# snips-skill-our-groceries
-[![License](https://img.shields.io/github/license/franc6/snips-skill-our-groceries.svg)](https://github.com/franc6/snips-skill-our-groceries/blob/master/LICENSE)
+# IMPORTANT NOTICE!
 
-Snips actions for interacting with Our Groceries
+All licenses for this software are revoked as of Jan 31, 2020.  You are NOT
+allowed to use this software after Jan 31, 2020.  Modifications and
+distributions of this app are expressly forbidden.
 
-If you're not using my Our Groceries app, you'll need to modify this somewhat.
-The username attached to the intents it cares about will be different.
-Additionally, you should ensure that your intents have two special entities for
-your slots.  The "what" slot should use a custom entity named
-"our_groceries_item_name", and the "list" slot should use a custom entity named
-"our_groceries_list_name".  These special entities are updated with your
-existing lists and items on Our Groceries.
-
-If you'd like to help with translations, please fork this repository and submit
-pull requests.  Please include both the .po and .mo files for translations.
-
-[![Buy me some pizza](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/qpunYPZx5)
+Sonos purchased Snips in 2019, and announced that the Snips Console will be
+closed as of January 31, 2020.  By closing the Snips Console, Sonos has
+indicated a desire to move Snips to a closed system.  I don't have any problem
+with that.  However, having worked for a number of software and other
+companies, I fear that Sonos' management was under the mistaken belief that all
+of the software available for the Snips platform was part of their purchase.
+This is not the case, as most of the software for the platform was developed by
+other entities.  By revoking the license, I hope to make it clear to Sonos that
+any copying, modification, use, or distribution of my software by Sonos is a
+violation of copyright law.  If I learn that Sonos is distributing software
+that is substantially similar, I will take all necessary measures to stop all
+distribution unless and until it is proven that Sonos has not undertaken any
+illegal activity in that distribution.
